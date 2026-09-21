@@ -286,3 +286,46 @@ function cerrarModalBitacora() {
     document.getElementById('modalBitacora').classList.add('oculto');
     envioIdBitacoraActual = null;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+
+            errorMessage.textContent = '';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    sessionStorage.setItem('jwt_token', data.token);
+                    
+                    window.location.href = 'dashboard.html';
+                } else if (response.status === 401 || response.status === 403) {
+                    errorMessage.textContent = 'Credenciales incorrectas. Intente nuevamente.';
+                } else {
+                    errorMessage.textContent = 'Error procesando la solicitud. Código: ' + response.status;
+                }
+            } catch (error) {
+                console.error('Error de red:', error);
+                errorMessage.textContent = 'No se pudo conectar con el servidor. ¿Está encendido el backend?';
+            }
+        });
+    }
+});
