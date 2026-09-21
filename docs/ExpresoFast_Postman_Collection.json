@@ -1,0 +1,70 @@
+{
+  "info": {
+    "name": "ExpresoFast Lab6 API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080/api" },
+    { "key": "jwt_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+      }
+    },
+    {
+      "name": "Listar Envíos Optimizados",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+        "url": { "raw": "{{base_url}}/envios/optimizados", "host": ["{{base_url}}"], "path": ["envios", "optimizados"] }
+      }
+    },
+    {
+      "name": "Registrar Envío",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"codigoRastreo\": \"EXP-9901\",\n  \"direccionDestino\": \"Paraíso, Cartago\",\n  \"pesoKg\": 12.5,\n  \"costo\": 3500.00,\n  \"vehiculoId\": 1,\n  \"conductorId\": 1\n}"
+        },
+        "url": { "raw": "{{base_url}}/envios", "host": ["{{base_url}}"], "path": ["envios"] }
+      }
+    },
+    {
+      "name": "Cambiar Estado de Envío",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nuevoEstado\": \"EN_TRANSITO\",\n  \"observaciones\": \"Salida de bodega central\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/envios/1/estado", "host": ["{{base_url}}"], "path": ["envios", "1", "estado"] }
+      }
+    },
+    {
+      "name": "Consultar Bitácora de Envío",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+        "url": { "raw": "{{base_url}}/envios/1/bitacora", "host": ["{{base_url}}"], "path": ["envios", "1", "bitacora"] }
+      }
+    }
+  ]
+}

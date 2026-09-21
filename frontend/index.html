@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpresoFast - Plataforma de Monitoreo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">ExpresoFast</div>
+        <nav class="nav-user">
+            <span id="usuarioInfo">Portal de Monitoreo Logístico</span>
+            <button class="btn-logout" onclick="cerrarSesion()">Cerrar sesión</button>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <aside class="sidebar">
+            <section class="card-filter">
+                <h3>Filtrar por Estado</h3>
+                <div class="filter-buttons">
+                    <button class="btn-filter active" onclick="filtrarEstado('TODOS', event)">TODOS</button>
+                    <button class="btn-filter" onclick="filtrarEstado('PENDIENTE', event)">PENDIENTE</button>
+                    <button class="btn-filter" onclick="filtrarEstado('EN_TRANSITO', event)">EN TRÁNSITO</button>
+                    <button class="btn-filter" onclick="filtrarEstado('ENTREGADO', event)">ENTREGADO</button>
+                    <button class="btn-filter" onclick="filtrarEstado('CANCELADO', event)">CANCELADO</button>
+                </div>
+            </section>
+
+            <!-- Oculto para ROLE_CONDUCTOR mediante renderizadoCondicionalPorRol() -->
+            <section class="card-form" id="formRegistroEnvio">
+                <h3>Registrar Nuevo Envío</h3>
+                <form id="envioForm" onsubmit="registrarEnvio(event)">
+                    <div class="form-group">
+                        <label for="codigoRastreo">Código de Rastreo</label>
+                        <input type="text" id="codigoRastreo" required placeholder="EXP-9901">
+                    </div>
+                    <div class="form-group">
+                        <label for="direccionDestino">Dirección Destino</label>
+                        <input type="text" id="direccionDestino" required placeholder="Paraíso, Cartago">
+                    </div>
+                    <div class="form-group">
+                        <label for="pesoKg">Peso (kg)</label>
+                        <input type="number" step="0.01" id="pesoKg" required placeholder="12.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="costo">Costo (₡)</label>
+                        <input type="number" step="0.01" id="costo" required placeholder="3500.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="vehiculoId">ID Vehículo</label>
+                        <input type="number" id="vehiculoId" required placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="conductorId">ID Conductor</label>
+                        <input type="number" id="conductorId" required placeholder="1">
+                    </div>
+                    <button type="submit" class="btn-submit">Guardar Envío</button>
+                </form>
+            </section>
+        </aside>
+
+        <section class="dashboard">
+            <h2>Tablero de Envíos</h2>
+            <div id="enviosContainer" class="grid-envios">
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Bitácora de Auditoría -->
+    <div id="modalBitacora" class="modal-overlay oculto">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Bitácora del Envío</h3>
+                <button class="btn-cerrar-modal" onclick="cerrarModalBitacora()">&times;</button>
+            </div>
+
+            <div class="modal-filtros">
+                <div class="form-group">
+                    <label for="fechaInicio">Desde</label>
+                    <input type="date" id="fechaInicio" onchange="filtrarBitacoraPorFecha()">
+                </div>
+                <div class="form-group">
+                    <label for="fechaFin">Hasta</label>
+                    <input type="date" id="fechaFin" onchange="filtrarBitacoraPorFecha()">
+                </div>
+            </div>
+
+            <div id="bitacoraContainer" class="bitacora-lista"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

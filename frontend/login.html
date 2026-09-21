@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpresoFast - Iniciar Sesión</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-box">
+            <div class="logo" style="margin-bottom: 1.5rem;">ExpresoFast</div>
+            <h2 style="margin-bottom: 1.5rem;">Iniciar Sesión</h2>
+
+            <form id="loginForm" onsubmit="iniciarSesion(event)">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" required placeholder="admin">
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <p id="loginError" class="login-error"></p>
+                <button type="submit" class="btn-submit">Ingresar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
