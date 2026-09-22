@@ -329,3 +329,156 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// ==========================================
+// Lógica de la Consola de Operaciones
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+
+    const dashboardHeader = document.querySelector('.dashboard-header');
+    
+    if (dashboardHeader) {
+        const token = sessionStorage.getItem('jwt_token');
+        
+
+        if (!token) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+
+        const payloadBase64 = token.split('.')[1];
+        const payloadDecoded = JSON.parse(atob(payloadBase64));
+        const username = payloadDecoded.sub;
+        
+
+        const roles = payloadDecoded.roles || []; 
+
+        document.getElementById('userName').textContent = username;
+
+
+        const isAdmin = roles.includes('ROLE_ADMIN');
+        const isOperador = roles.includes('ROLE_OPERADOR');
+        const isConductor = roles.includes('ROLE_CONDUCTOR');
+
+ 
+        if (isAdmin) {
+            document.getElementById('bitacoraAside').style.display = 'block';
+        }
+
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            sessionStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+        });
+
+   
+        cargarEnvios(token, isOperador, isConductor);
+    }
+});
+
+
+async function cargarEnvios(token, isOperador, isConductor) {
+    try {
+        // Cambiamos /api/envios por /api/envios/optimizados
+        const response = await fetch('http://localhost:8080/api/envios/optimizados', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            }
+        });
+
+
+        if (response.status === 401 || response.status === 403) {
+            sessionStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        if (!response.ok) throw new Error('Fallo al obtener los recursos');
+
+        const envios = await response.json();
+        renderizarTarjetas(envios, isOperador, isConductor);
+        calcularKPIs(envios);
+
+    } catch (error) {
+        console.error('Error de red:', error);
+    }
+}
+
+function renderizarTarjetas(envios, isOperador, isConductor) {
+    const grid = document.getElementById('enviosGrid');
+    grid.innerHTML = '';
+
+    envios.forEach(envio => {
+        const article = document.createElement('article');
+        article.className = `envio-card estado-${envio.estadoEnvio}`;
+        
+        let btnAccion = '';
+        
+        if (isOperador && envio.estadoEnvio === 'PENDIENTE') {
+            btnAccion = `<button onclick="cambiarEstado(${envio.id}, 'EN_TRANSITO')">Enviar a Tránsito</button>`;
+        } else if (isConductor && envio.estadoEnvio === 'EN_TRANSITO') {
+            btnAccion = `<button onclick="cambiarEstado(${envio.id}, 'ENTREGADO')">Confirmar Entrega</button>`;
+        }
+
+        // Asegúrate de usar las propiedades correctas que viajan desde el backend:
+        article.innerHTML = `
+            <h3>Rastreo: ${envio.codigoRastreo}</h3>
+            <p><strong>Destino:</strong> ${envio.direccionDestino}</p>
+            <p><strong>Estado:</strong> ${envio.estadoEnvio}</p>
+            <p><strong>Vehículo:</strong> ${envio.placaVehiculo || 'N/A'}</p>
+            <p><strong>Conductor:</strong> ${envio.nombreConductor || 'N/A'}</p>
+            ${btnAccion}
+        `;
+        
+        grid.appendChild(article);
+    });
+}
+
+
+window.cambiarEstado = async function(id, nuevoEstado) {
+    const token = sessionStorage.getItem('jwt_token');
+    
+    try {
+        const response = await fetch(`http://localhost:8080/api/envios/${id}/estado`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ nuevoEstado: nuevoEstado, observaciones: 'Actualización rápida web' })
+        });
+
+        if (response.status === 401 || response.status === 403) {
+            sessionStorage.removeItem('jwt_token');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'No se pudo actualizar el estado.');
+        }
+
+        // Si todo sale bien, recargamos la vista
+        window.location.reload();
+
+    } catch (error) {
+        console.error('Error al cambiar estado:', error);
+        alert('Error: ' + error.message);
+    }
+};
+
+function calcularKPIs(envios) {
+    document.getElementById('kpiTotal').textContent = envios.length;
+    document.getElementById('kpiEntregados').textContent = envios.filter(e => e.estadoEnvio === 'ENTREGADO').length;
+    
+   
+    const vehiculosEnRuta = new Set(
+        envios.filter(e => e.estadoEnvio === 'EN_TRANSITO' && e.placaVehiculo)
+              .map(e => e.placaVehiculo)
+    );
+    document.getElementById('kpiVehiculos').textContent = vehiculosEnRuta.size;
+}

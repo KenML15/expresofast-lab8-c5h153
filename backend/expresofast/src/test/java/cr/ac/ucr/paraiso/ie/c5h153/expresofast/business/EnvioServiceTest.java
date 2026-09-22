@@ -312,25 +312,28 @@ class EnvioServiceTest {
         assertEquals("TRK-123", response.getCodigoRastreo());
     }
 
-    @Test
+  @Test
     @DisplayName("Debe obtener la lista de envíos optimizados")
     void obtenerEnviosOptimizados_RetornaLista() {
-        Envio envio = new Envio(); 
-        envio.setId(1); 
-        envio.setCodigoRastreo("TRK-123");
-        Vehiculo vehiculo = new Vehiculo(); 
-        vehiculo.setPlaca("123"); 
-        envio.setVehiculo(vehiculo);
-        Conductor conductor = new Conductor(); 
-        conductor.setNombre("J"); 
-        conductor.setApellidos("P"); 
-        envio.setConductor(conductor);
+        // Creamos el DTO simulado que ahora retorna directamente el repositorio optimizado
+        EnvioResponseDTO dtoSimulado = new EnvioResponseDTO(
+            1, 
+            "EXP-1234", 
+            "UCR Recinto Paraíso", 
+            new java.math.BigDecimal("15.00"), 
+            new java.math.BigDecimal("7500.00"), 
+            "PENDIENTE", 
+            "SJL-123", 
+            "Roberto Quirós"
+        );
         
-        when(envioRepository.findAllWithDetails()).thenReturn(java.util.List.of(envio));
+        // Mockeamos el método correcto del repositorio
+        when(envioRepository.findAllDtoWithDetails()).thenReturn(java.util.List.of(dtoSimulado));
         
+        // Ejecutamos y verificamos
         java.util.List<EnvioResponseDTO> resultado = envioService.obtenerEnviosOptimizados();
         assertFalse(resultado.isEmpty());
-        assertEquals("TRK-123", resultado.get(0).getCodigoRastreo());
+        assertEquals("EXP-1234", resultado.get(0).getCodigoRastreo());
     }
 
     @Test

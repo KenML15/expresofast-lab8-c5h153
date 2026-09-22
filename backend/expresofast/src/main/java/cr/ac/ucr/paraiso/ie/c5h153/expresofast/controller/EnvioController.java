@@ -6,6 +6,9 @@ import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CambioEstadoDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
 import jakarta.validation.Valid;
+
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,11 +35,15 @@ public class EnvioController {
         return ResponseEntity.ok(nuevoEnvio);
     }
 
-    @PatchMapping("/{id}/estado")
-    public ResponseEntity<EnvioResponseDTO> actualizarEstadoEnvio(@PathVariable Integer id,
-                                                                    @Valid @RequestBody CambioEstadoDTO request) {
-        EnvioResponseDTO envioActualizado = envioService.actualizarEstadoEnvio(id, request);
-        return ResponseEntity.ok(envioActualizado);
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> actualizarEstado(@PathVariable Integer id, @RequestBody CambioEstadoDTO request, Authentication authentication) {
+        try {
+            EnvioResponseDTO response = envioService.actualizarEstadoEnvio(id, request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace(); // Esto imprimirá la línea exacta del error en rojo en tu IDE
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")

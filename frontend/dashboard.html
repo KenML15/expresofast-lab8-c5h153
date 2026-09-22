@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpresoFast - Consola de Operaciones</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-body">
+
+    <header class="dashboard-header">
+        <div class="logo">
+            <h1>ExpresoFast</h1>
+        </div>
+        <div class="user-controls">
+            <span id="userName">Cargando usuario...</span>
+            <button id="btnLogout" class="btn-logout">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <nav class="dashboard-nav">
+        <ul id="filterMenu">
+            <li><button class="filter-btn active" data-filter="TODOS">Todos</button></li>
+            <li><button class="filter-btn" data-filter="PENDIENTE">Pendientes</button></li>
+            <li><button class="filter-btn" data-filter="EN_TRANSITO">En Tránsito</button></li>
+            <li><button class="filter-btn" data-filter="ENTREGADO">Entregados</button></li>
+        </ul>
+    </nav>
+
+    <div class="layout-container">
+        <main class="dashboard-main">
+            
+            <section id="kpiSection" class="kpi-section">
+                <div class="kpi-card">
+                    <h3>Total Envíos</h3>
+                    <p id="kpiTotal">0</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>Vehículos Activos</h3>
+                    <p id="kpiVehiculos">0</p>
+                </div>
+                <div class="kpi-card">
+                    <h3>Paquetes Entregados</h3>
+                    <p id="kpiEntregados">0</p>
+                </div>
+            </section>
+
+            <section id="enviosGrid" class="envios-grid">
+            </section>
+            
+        </main>
+
+        <aside id="bitacoraAside" class="bitacora-aside" style="display: none;">
+            <h2>Bitácora de Auditoría</h2>
+            <div id="bitacoraContent" class="bitacora-content">
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 ExpresoFast Logística. Todos los derechos reservados. | <a href="#">Soporte Técnico</a></p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
