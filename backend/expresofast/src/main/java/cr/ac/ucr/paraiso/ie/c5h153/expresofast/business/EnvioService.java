@@ -1,5 +1,18 @@
 package cr.ac.ucr.paraiso.ie.c5h153.expresofast.business;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.BitacoraEnvioRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.ConductorRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.EnvioRepository;
@@ -12,20 +25,11 @@ import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Usuario;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Vehiculo;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.BitacoraResponseDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CambioEstadoDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.exception.InvalidStateTransitionException;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.exception.ResourceNotFoundException;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -41,10 +45,10 @@ public class EnvioService {
     private final UsuarioRepository usuarioRepository;
 
     public EnvioService(EnvioRepository envioRepository,
-                         VehiculoRepository vehiculoRepository,
-                         ConductorRepository conductorRepository,
-                         BitacoraEnvioRepository bitacoraEnvioRepository,
-                         UsuarioRepository usuarioRepository) {
+            VehiculoRepository vehiculoRepository,
+            ConductorRepository conductorRepository,
+            BitacoraEnvioRepository bitacoraEnvioRepository,
+            UsuarioRepository usuarioRepository) {
         this.envioRepository = envioRepository;
         this.vehiculoRepository = vehiculoRepository;
         this.conductorRepository = conductorRepository;
@@ -57,7 +61,6 @@ public class EnvioService {
         List<Envio> envios = envioRepository.findAll();
         return envios.stream()
                 .map(envio -> {
-                    // Forzamos la inicialización segura de las propiedades perezosas si existen
                     String placa = "N/A";
                     try {
                         if (envio.getVehiculo() != null) {
@@ -77,25 +80,22 @@ public class EnvioService {
                     }
 
                     return new EnvíoResponseDTO_Seguro(
-                        envio.getId(),
-                        envio.getCodigoRastreo(),
-                        envio.getDireccionDestino(),
-                        envio.getPesoKg(),
-                        envio.getCosto(),
-                        envio.getEstadoEnvio(),
-                        placa,
-                        conductorStr
-                    );
+                            envio.getId(),
+                            envio.getCodigoRastreo(),
+                            envio.getDireccionDestino(),
+                            envio.getPesoKg(),
+                            envio.getCosto(),
+                            envio.getEstadoEnvio(),
+                            placa,
+                            conductorStr);
                 })
                 .map(dto -> new EnvioResponseDTO(
-                        dto.id, dto.codigoRastreo, dto.direccionDestino, 
-                        dto.pesoKg, dto.costo, dto.estadoEnvio, 
-                        dto.placaVehiculo, dto.nombreConductor
-                ))
+                        dto.id, dto.codigoRastreo, dto.direccionDestino,
+                        dto.pesoKg, dto.costo, dto.estadoEnvio,
+                        dto.placaVehiculo, dto.nombreConductor))
                 .collect(Collectors.toList());
     }
 
-    // Clase auxiliar interna para evitar problemas de tipos durante el mapeo seguro
     private static class EnvíoResponseDTO_Seguro {
         Integer id;
         String codigoRastreo;
@@ -106,9 +106,9 @@ public class EnvioService {
         String placaVehiculo;
         String nombreConductor;
 
-        public EnvíoResponseDTO_Seguro(Integer id, String codigoRastreo, String direccionDestino, 
-                                       java.math.BigDecimal pesoKg, java.math.BigDecimal costo, 
-                                       String estadoEnvio, String placaVehiculo, String nombreConductor) {
+        public EnvíoResponseDTO_Seguro(Integer id, String codigoRastreo, String direccionDestino,
+                java.math.BigDecimal pesoKg, java.math.BigDecimal costo,
+                String estadoEnvio, String placaVehiculo, String nombreConductor) {
             this.id = id;
             this.codigoRastreo = codigoRastreo;
             this.direccionDestino = direccionDestino;
@@ -157,15 +157,12 @@ public class EnvioService {
         envio.setEstadoEnvio(estadoNuevo);
         envioRepository.save(envio);
 
-        // Registramos en la bitácora de forma controlada
         try {
             registrarBitacora(envio, estadoAnterior, estadoNuevo, request.getObservaciones());
         } catch (Exception e) {
-            // Si hay un detalle con el usuario de la bitácora, evitamos que tire error 500 crítico
             System.err.println("Advertencia al registrar bitácora: " + e.getMessage());
         }
 
-        // Retornamos usando el método por ID que ya sabemos que mapea sin fallos
         return obtenerEnvioPorId(id);
     }
 
@@ -189,7 +186,7 @@ public class EnvioService {
     public EnvioResponseDTO obtenerEnvioPorId(Integer id) {
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado con ID: " + id));
-        
+
         return mapearAResponseDTO(envio);
     }
 
@@ -223,9 +220,9 @@ public class EnvioService {
 
     private EnvioResponseDTO mapearAResponseDTO(Envio envio) {
         String placaVehiculo = (envio.getVehiculo() != null) ? envio.getVehiculo().getPlaca() : "N/A";
-        String nombreConductor = (envio.getConductor() != null) 
-            ? envio.getConductor().getNombre() + " " + envio.getConductor().getApellidos() 
-            : "Sin Asignar";
+        String nombreConductor = (envio.getConductor() != null)
+                ? envio.getConductor().getNombre() + " " + envio.getConductor().getApellidos()
+                : "Sin Asignar";
 
         return new EnvioResponseDTO(
                 envio.getId(),
@@ -248,13 +245,12 @@ public class EnvioService {
 
         envio.setEstadoEnvio("CANCELADO");
         Envio actualizado = envioRepository.save(envio);
-        
 
         return mapearAResponseDTO(actualizado);
     }
 
     public double calcularTarifa(double pesoKg, double distanciaKm) {
-     
+
         if (pesoKg <= 10.0) {
             return 2500.0;
         } else if (pesoKg <= 50.0) {
@@ -262,5 +258,45 @@ public class EnvioService {
         } else {
             return 12000.0;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<EnvioDTO> listarViaStoredProcedure(String estado) {
+        List<Envio> envios = envioRepository.llamarSpEnviosPorEstado(estado);
+        return envios.stream().map(this::convertirADto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<EnvioDTO> listarPaginado(int page, int size, String sortBy, String dir, String busqueda,
+            String estado) {
+        Sort.Direction direction = dir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        Page<Envio> paginaEnvios;
+
+        if (busqueda != null && !busqueda.isBlank()) {
+            paginaEnvios = envioRepository.buscarPorTerminoPaginado(busqueda, pageable);
+        } else if (estado != null && !estado.isBlank()) {
+            paginaEnvios = envioRepository.findByEstadoEnvio(estado, pageable);
+        } else {
+            paginaEnvios = envioRepository.findAllPaginado(pageable);
+        }
+
+        // Convertimos Page<Envio> a Page<EnvioDTO>
+        return paginaEnvios.map(this::convertirADto);
+    }
+
+    private EnvioDTO convertirADto(Envio e) {
+        String destinatario = (e.getConductor() != null)
+                ? e.getConductor().getNombre() + " " + e.getConductor().getApellidos()
+                : "Sin asignar";
+        return new EnvioDTO(
+                e.getId(),
+                e.getCodigoRastreo(),
+                destinatario,
+                e.getDireccionDestino(),
+                e.getCosto(),
+                e.getEstadoEnvio(),
+                e.getFechaCreacion());
     }
 }

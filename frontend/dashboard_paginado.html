@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>ExpresoFast - Consola Paginada</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .controles { margin-bottom: 20px; display: flex; gap: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #004b87; color: white; }
+        .paginacion { display: flex; gap: 10px; align-items: center; justify-content: center; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <h2>Consola Logística Paginada</h2>
+
+    <div class="controles">
+        <input type="text" id="txtBusqueda" placeholder="Buscar rastreo o destino...">
+        <select id="cbSize">
+            <option value="5">5 ítems por página</option>
+            <option value="10">10 ítems por página</option>
+            <option value="20">20 ítems por página</option>
+        </select>
+        <select id="cbSpEstado">
+            <option value="">-- Paginación General --</option>
+            <option value="PENDIENTE">SP: Pendientes</option>
+            <option value="EN_TRANSITO">SP: En Tránsito</option>
+            <option value="ENTREGADO">SP: Entregados</option>
+        </select>
+        <button onclick="cargarDatos(0)">Buscar / Refrescar</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Rastreo</th>
+                <th>Destinatario</th>
+                <th>Dirección</th>
+                <th>Flete (₡)</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody id="tablaBody">
+        </tbody>
+    </table>
+
+    <div class="paginacion" id="panelPaginacion">
+        <button id="btnPrimera" onclick="cargarDatos(0)">&lt;&lt; Primera</button>
+        <button id="btnAnterior" onclick="cambiarPagina(-1)">&lt; Anterior</button>
+        <span id="indicadorPagina">Página 1 de 1 (Total: 0 envíos)</span>
+        <button id="btnSiguiente" onclick="cambiarPagina(1)">Siguiente &gt;</button>
+        <button id="btnUltima" onclick="irUltimaPagina()">Última &gt;&gt;</button>
+    </div>
+
+    <script src="app_paginado.js"></script>
+</body>
+</html>
