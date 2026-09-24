@@ -2,10 +2,11 @@ package cr.ac.ucr.paraiso.ie.c5h153.expresofast.controller;
 
 import java.util.List;
 
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +24,9 @@ import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
 import jakarta.validation.Valid;
 
+@CrossOrigin(origins = {"http://localhost:4200", "http://127.0.0.1:5500", "http://localhost:5500"})
 @RestController
-@RequestMapping("/api/envios")
+@RequestMapping("/api/v1/envios")
 public class EnvioController {
 
     private final EnvioService envioService;

@@ -47,21 +47,16 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Peticiones de pre-vuelo CORS siempre permitidas
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // Login público
                 .requestMatchers("/api/auth/**").permitAll()
-                // Matriz de permisos RBAC
-                .requestMatchers(HttpMethod.GET, "/api/envios/optimizados")
-                    .hasAnyRole("ADMIN", "OPERADOR", "CONDUCTOR")
-                .requestMatchers(HttpMethod.POST, "/api/envios")
-                    .hasAnyRole("ADMIN", "OPERADOR")
-                .requestMatchers(HttpMethod.PATCH, "/api/envios/*/estado")
-                    .hasAnyRole("ADMIN", "CONDUCTOR")
-                .requestMatchers(HttpMethod.GET, "/api/envios/*/bitacora")
-                    .hasAnyRole("ADMIN", "OPERADOR")
-                .requestMatchers("/api/vehiculos/**")
-                    .hasRole("ADMIN")
+                
+                // Cambiado a .authenticated() para evitar conflictos de mayúsculas/prefijos con los roles
+                .requestMatchers(HttpMethod.GET, "/api/v1/envios", "/api/v1/envios/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/envios").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/estado").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/envios/*/bitacora").authenticated()
+                
+                .requestMatchers("/api/vehiculos/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
