@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.business.EnvioService;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.BitacoraResponseDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CambioEstadoDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CrearEnvioDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
@@ -40,7 +42,24 @@ public class EnvioController {
         return ResponseEntity.ok(envioService.obtenerEnviosOptimizados());
     }
 
+    @GetMapping("/rastreo/{codigo}")
+    public ResponseEntity<EnvioDTO> obtenerPorRastreo(@PathVariable String codigo) {
+        return ResponseEntity.ok(envioService.buscarPorCodigoRastreo(codigo));
+    }
+
     @PostMapping
+    public ResponseEntity<EnvioDTO> crearEnvio(@Valid @RequestBody CrearEnvioDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(envioService.crearEnvio(request));
+    }
+
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<EnvioDTO> actualizarEstadoEntrega(@PathVariable Integer id,
+            @RequestBody CambioEstadoDTO request) {
+        return ResponseEntity.ok(envioService.actualizarEstado(id, request));
+    }
+
+    // Registro completo con vehículo y conductor (consola Vanilla JS de laboratorios previos)
+    @PostMapping("/completo")
     public ResponseEntity<EnvioResponseDTO> registrarEnvio(@Valid @RequestBody EnvioRequestDTO request) {
         EnvioResponseDTO nuevoEnvio = envioService.registrarEnvio(request);
         return ResponseEntity.ok(nuevoEnvio);
@@ -69,14 +88,28 @@ public class EnvioController {
         return ResponseEntity.ok(envioService.obtenerBitacoraDeEnvio(id));
     }
 
+    // Sin parámetro "page" retorna la lista completa (Angular); con "page" retorna la página (Lab 9)
     @GetMapping
-    public ResponseEntity<Page<EnvioDTO>> obtenerEnviosPaginados(
-            @RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<?> obtenerEnvios(
+            @RequestParam(required = false) Integer page,
             @RequestParam(defaultValue = "5") int size,
             @RequestParam(defaultValue = "fechaCreacion") String sortBy,
             @RequestParam(defaultValue = "desc") String direction,
             @RequestParam(required = false) String busqueda,
             @RequestParam(required = false) String estado) {
+        if (page == null) {
+            return ResponseEntity.ok(envioService.obtenerTodos(estado));
+        }
+        return obtenerEnviosPaginados(page, size, sortBy, direction, busqueda, estado);
+    }
+
+    private ResponseEntity<Page<EnvioDTO>> obtenerEnviosPaginados(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            String busqueda,
+            String estado) {
         Page<EnvioDTO> envios = envioService.listarPaginado(page, size, sortBy, direction, busqueda, estado);
         return ResponseEntity.ok(envios);
     }
