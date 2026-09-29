@@ -1,24 +1,29 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [App],
-    })
-      .compileComponents();
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    }).compileComponents();
   });
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('muestra la barra de navegación con las 3 vistas cuando hay sesión', async () => {
+    sessionStorage.setItem('jwt_token', 'token');
+    sessionStorage.setItem('username', 'admin');
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, expresofast-frontend');
+    const enlaces = Array.from<HTMLAnchorElement>(fixture.nativeElement.querySelectorAll('.nav-links a'));
+    expect(enlaces.map((a) => a.getAttribute('href'))).toEqual(['/envios', '/nuevo-envio', '/rastreo']);
   });
 });
