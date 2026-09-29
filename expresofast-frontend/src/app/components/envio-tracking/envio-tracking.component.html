@@ -1,0 +1,65 @@
+<section class="contenedor" aria-labelledby="titulo-rastreo">
+  <div class="page-header">
+    <div>
+      <h1 id="titulo-rastreo">Rastrear guía</h1>
+      <p>Consulte el estado de entrega de un paquete con su código de rastreo.</p>
+    </div>
+  </div>
+
+  <form class="card buscador" (ngSubmit)="buscar()" role="search">
+    <label for="codigo" class="sr-only">Código de rastreo</label>
+    <input id="codigo" name="codigo" class="control codigo" type="text" autocomplete="off"
+      placeholder="EXP-2026-1001" [(ngModel)]="codigo" />
+    <button type="submit" class="btn btn-primario" [disabled]="buscando()">
+      {{ buscando() ? 'Buscando…' : 'Rastrear' }}
+    </button>
+  </form>
+
+  <div aria-live="polite">
+    @if (error()) {
+      <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+    }
+
+    @if (envio(); as e) {
+      <article class="card ficha" [attr.aria-label]="'Detalle de la guía ' + e.codigoRastreo">
+        <header class="ficha-encabezado">
+          <div>
+            <p class="rotulo">Código de rastreo</p>
+            <p class="codigo codigo-grande">{{ e.codigoRastreo }}</p>
+          </div>
+          <span class="badge" [ngClass]="'badge-' + e.estado.toLowerCase()">{{ etiquetaEstado(e.estado) }}</span>
+        </header>
+
+        <div class="progreso" [class.cancelado]="e.estado === 'CANCELADO'">
+          <div class="barra" role="progressbar" aria-label="Progreso de la entrega"
+            aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progreso()"
+            [attr.aria-valuetext]="etiquetaEstado(e.estado)">
+            <div class="relleno" [style.width.%]="progreso()"></div>
+          </div>
+
+          @if (e.estado === 'CANCELADO') {
+            <p class="aviso-cancelado">Este envío fue cancelado y no continuará su recorrido.</p>
+          } @else {
+            <ol class="pasos">
+              @for (paso of pasos; track paso.estado; let i = $index) {
+                <li [class.completado]="i < pasoActual()" [class.actual]="i === pasoActual()"
+                  [attr.aria-current]="i === pasoActual() ? 'step' : null">
+                  <span class="punto" aria-hidden="true">{{ i < pasoActual() ? '✓' : i + 1 }}</span>
+                  <span class="paso-titulo">{{ paso.titulo }}</span>
+                  <span class="paso-desc">{{ paso.descripcion }}</span>
+                </li>
+              }
+            </ol>
+          }
+        </div>
+
+        <dl class="detalle">
+          <div><dt>Destinatario</dt><dd>{{ e.destinatario }}</dd></div>
+          <div><dt>Dirección de destino</dt><dd>{{ e.direccionDestino }}</dd></div>
+          <div><dt>Monto de flete</dt><dd>{{ e.montoFlete | currency: 'CRC' : 'symbol-narrow' }}</dd></div>
+          <div><dt>Fecha de registro</dt><dd>{{ e.fechaCreacion ? (e.fechaCreacion | date: 'dd/MM/yyyy HH:mm') : '—' }}</dd></div>
+        </dl>
+      </article>
+    }
+  </div>
+</section>

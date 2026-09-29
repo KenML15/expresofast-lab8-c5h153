@@ -1,0 +1,114 @@
+<section aria-labelledby="titulo-envios">
+  <div class="page-header">
+    <div>
+      <h1 id="titulo-envios">Panel de envíos</h1>
+      <p>Guías registradas en la consola logística y su estado de entrega.</p>
+    </div>
+    <div class="acciones">
+      <button type="button" class="btn btn-secundario" (click)="cargarEnvios()" [disabled]="cargando()">
+        Actualizar
+      </button>
+      <a class="btn btn-primario" routerLink="/nuevo-envio">+ Nuevo envío</a>
+    </div>
+  </div>
+
+  <div class="resumen">
+    <button type="button" class="tarjeta-resumen" [class.seleccionada]="filtro() === 'TODOS'"
+      (click)="filtro.set('TODOS')" [attr.aria-pressed]="filtro() === 'TODOS'">
+      <span class="numero">{{ envios().length }}</span>
+      <span class="etiqueta">Todos</span>
+    </button>
+    @for (item of resumen(); track item.valor) {
+      <button type="button" class="tarjeta-resumen" [class.seleccionada]="filtro() === item.valor"
+        (click)="filtro.set(item.valor)" [attr.aria-pressed]="filtro() === item.valor">
+        <span class="numero">{{ item.total }}</span>
+        <span class="badge" [ngClass]="'badge-' + item.valor.toLowerCase()">{{ item.etiqueta }}</span>
+      </button>
+    }
+  </div>
+
+  <div class="filtros">
+    <div class="campo">
+      <label for="busqueda">Buscar</label>
+      <input id="busqueda" class="control" type="search" placeholder="Código, destinatario o dirección"
+        [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" />
+    </div>
+    <div class="campo">
+      <label for="filtroEstado">Estado</label>
+      <select id="filtroEstado" class="control" [ngModel]="filtro()" (ngModelChange)="filtro.set($event)">
+        <option value="TODOS">Todos los estados</option>
+        @for (estado of estados; track estado.valor) {
+          <option [value]="estado.valor">{{ estado.etiqueta }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div aria-live="polite">
+    @if (mensaje()) {
+      <div class="alerta alerta-exito">{{ mensaje() }}</div>
+    }
+    @if (error()) {
+      <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+    }
+  </div>
+
+  <div class="card tabla-contenedor">
+    <table>
+      <caption class="sr-only">Listado de guías de envío</caption>
+      <thead>
+        <tr>
+          <th scope="col">Código de rastreo</th>
+          <th scope="col">Destinatario</th>
+          <th scope="col">Dirección</th>
+          <th scope="col" class="num">Flete</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Actualizar estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (cargando()) {
+          <tr><td colspan="6" class="vacio">Cargando envíos…</td></tr>
+        } @else {
+          @for (envio of enviosFiltrados(); track envio.id) {
+            <tr>
+              <td>
+                <a class="codigo" routerLink="/rastreo" [queryParams]="{ codigo: envio.codigoRastreo }">{{ envio.codigoRastreo }}</a>
+              </td>
+              <td>{{ envio.destinatario }}</td>
+              <td>{{ envio.direccionDestino }}</td>
+              <td class="num">{{ envio.montoFlete | currency: 'CRC' : 'symbol-narrow' }}</td>
+              <td>
+                <span class="badge" [ngClass]="'badge-' + envio.estado.toLowerCase()">
+                  {{ etiquetaEstado(envio.estado) }}
+                </span>
+              </td>
+              <td>
+                <label class="sr-only" [attr.for]="'estado-' + envio.id">Estado de {{ envio.codigoRastreo }}</label>
+                <select #selector class="control control-estado" [id]="'estado-' + envio.id"
+                  [disabled]="actualizandoId() === envio.id" (change)="cambiarEstado(envio, selector)">
+                  @for (estado of estados; track estado.valor) {
+                    <option [value]="estado.valor" [selected]="estado.valor === envio.estado"
+                      [disabled]="opcionDeshabilitada(envio, estado.valor)">
+                      {{ estado.etiqueta }}
+                    </option>
+                  }
+                </select>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="vacio">
+                @if (envios().length === 0 && !error()) {
+                  Aún no hay envíos registrados. <a routerLink="/nuevo-envio">Registre el primero</a>.
+                } @else {
+                  No hay envíos que coincidan con el filtro.
+                }
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
