@@ -31,3 +31,66 @@ Sistema web desarrollado para la administración y control de envíos de paquete
    spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=ExpresoFast_C5H153;encrypt=true;trustServerCertificate=true
    spring.datasource.username=
    spring.datasource.password=
+   ```
+3. La contraseña se lee de la variable de entorno `DB_PASSWORD`.
+
+---
+
+## Laboratorio 10 — Consola logística SPA con Angular
+
+A partir de este laboratorio el cliente web es una **Single Page Application en Angular Standalone** (`expresofast-frontend/`) que consume la API RESTful de Spring Boot (`backend/expresofast/`). La consola Vanilla JS de laboratorios anteriores se conserva en `frontend/` solo como referencia.
+
+### Estructura
+
+```
+backend/expresofast/            <- Spring Boot (Java 21)
+  domain/Envio.java             Entidad JPA (codigoRastreo único, destinatario, dirección, flete, estado, fechaCreacion)
+  data/EnvioRepository.java     Búsqueda por código de rastreo y filtrado por estado
+  dto/EnvioDTO.java             Respuesta de la API
+  dto/CrearEnvioDTO.java        Payload de registro (destinatario, dirección, montoFlete)
+  business/EnvioService.java    Reglas de negocio; genera códigos EXP-AAAA-XXXX
+  controller/EnvioController.java
+expresofast-frontend/           <- Angular Standalone
+  src/environments/environment.ts   API_URL = http://localhost:8080/api/v1/
+  src/app/models/envio.model.ts     Envio, CrearEnvioPayload
+  src/app/services/envio.service.ts HttpClient: GET, POST, PATCH
+  src/app/components/envio-list/    /envios
+  src/app/components/envio-form/    /nuevo-envio
+  src/app/components/envio-tracking/ /rastreo
+  src/app/app.config.ts             provideHttpClient(withFetch(), ...)
+  src/app/app.routes.ts             Redirección por defecto a /envios
+```
+
+### Endpoints (`/api/v1/envios`, requieren JWT)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/api/v1/envios` | Lista de todos los envíos (con `?page=` retorna la versión paginada del Lab 9) |
+| `GET` | `/api/v1/envios/rastreo/{codigo}` | Detalle del envío por código de rastreo |
+| `POST` | `/api/v1/envios` | Registra un envío desde `CrearEnvioDTO`; genera `EXP-2026-XXXX` y estado `PENDIENTE` |
+| `PATCH` | `/api/v1/envios/{id}/estado` | Actualiza el estado (`PENDIENTE`, `EN_TRANSITO`, `ENTREGADO`, `CANCELADO`) |
+
+CORS: `@CrossOrigin(origins = "http://localhost:4200")` en el controlador y en `SecurityConfig`.
+
+### Ejecución
+
+1. **Base de datos:** ejecutar en orden los scripts de `database/`, incluido `04_schema_lab10_destinatario.sql` (agrega la columna `destinatario`).
+2. **Backend** (puerto 8080):
+   ```bash
+   cd backend/expresofast
+   ./mvnw spring-boot:run
+   ```
+3. **Frontend** (puerto 4200):
+   ```bash
+   cd expresofast-frontend
+   npm install
+   ng serve
+   ```
+4. Abrir `http://localhost:4200`, iniciar sesión con un usuario de `03_data_seeds.sql` y navegar con la barra superior entre **Envíos**, **Nuevo envío** y **Rastrear guía**.
+
+### Pruebas del frontend
+
+```bash
+cd expresofast-frontend
+ng test --watch=false
+```
