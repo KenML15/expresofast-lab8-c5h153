@@ -1,6 +1,7 @@
 package cr.ac.ucr.paraiso.ie.c5h153.expresofast.data;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,4 +45,16 @@ public interface EnvioRepository extends JpaRepository<Envio, Integer> {
     @Query("SELECT e FROM Envio e WHERE LOWER(e.codigoRastreo) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
             "OR LOWER(e.direccionDestino) LIKE LOWER(CONCAT('%', :busqueda, '%'))")
     Page<Envio> buscarPorTerminoPaginado(@Param("busqueda") String busqueda, Pageable pageable);
+
+    @EntityGraph(attributePaths = { "vehiculo", "conductor" })
+    Optional<Envio> findByCodigoRastreoIgnoreCase(String codigoRastreo);
+
+    @EntityGraph(attributePaths = { "vehiculo", "conductor" })
+    List<Envio> findByEstadoEnvioOrderByIdDesc(String estadoEnvio);
+
+    @EntityGraph(attributePaths = { "vehiculo", "conductor" })
+    @Query("SELECT e FROM Envio e ORDER BY e.id DESC")
+    List<Envio> findAllConDetalles();
+
+    boolean existsByCodigoRastreo(String codigoRastreo);
 }

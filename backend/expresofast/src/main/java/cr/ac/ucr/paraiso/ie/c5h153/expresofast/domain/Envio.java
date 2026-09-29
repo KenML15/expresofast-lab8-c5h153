@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "Envio")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Envio extends AuditableEntity {
 
     @Id
@@ -17,10 +17,13 @@ public class Envio extends AuditableEntity {
     @Column(name = "codigo_rastreo", nullable = false, unique = true, length = 30)
     private String codigoRastreo;
 
+    @Column(name = "destinatario", length = 120)
+    private String destinatario;
+
     @Column(name = "direccion_destino", nullable = false, length = 200)
     private String direccionDestino;
 
-    @Column(name = "peso_kg", nullable = false, precision = 10, scale = 2)
+    @Column(name = "peso_kg", precision = 10, scale = 2)
     private BigDecimal pesoKg;
 
     @Column(nullable = false, precision = 10, scale = 2)
@@ -30,11 +33,11 @@ public class Envio extends AuditableEntity {
     private String estadoEnvio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehiculo_id", nullable = false)
+    @JoinColumn(name = "vehiculo_id")
     private Vehiculo vehiculo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conductor_id", nullable = false)
+    @JoinColumn(name = "conductor_id")
     private Conductor conductor;
 
     // Getters y Setters
@@ -52,6 +55,14 @@ public class Envio extends AuditableEntity {
 
     public void setCodigoRastreo(String codigoRastreo) {
         this.codigoRastreo = codigoRastreo;
+    }
+
+    public String getDestinatario() {
+        return destinatario;
+    }
+
+    public void setDestinatario(String destinatario) {
+        this.destinatario = destinatario;
     }
 
     public String getDireccionDestino() {
