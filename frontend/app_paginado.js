@@ -6,7 +6,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function cargarDatos(page) {
-    const token = sessionStorage.getItem('jwt_token'); // Asumiendo que guardaste el token aquí
+    // Buscar el token en los diferentes nombres y lugares donde pudo guardarse
+    let token = sessionStorage.getItem('jwt_token') || 
+                localStorage.getItem('token') || 
+                sessionStorage.getItem('token');
+
+    // ALERTA VISUAL: Si no hay token, detener todo y avisar
+    if (!token || token === 'null') {
+        alert("No se encontró el token de seguridad. Serás redirigido al login.");
+        window.location.href = 'login.html'; // Ajusta al nombre de tu archivo de login
+        return;
+    }
+
     const busqueda = document.getElementById('txtBusqueda').value;
     const size = document.getElementById('cbSize').value;
     const spEstado = document.getElementById('cbSpEstado').value;

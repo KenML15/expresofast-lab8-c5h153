@@ -1,0 +1,84 @@
+<section class="contenedor" aria-labelledby="titulo-form">
+  <div class="page-header">
+    <div>
+      <h1 id="titulo-form">Registrar nuevo envío</h1>
+      <p>El código de rastreo (EXP-AAAA-XXXX) se genera automáticamente al guardar.</p>
+    </div>
+  </div>
+
+  @if (creado(); as nuevo) {
+    <div class="card exito" role="status">
+      <p class="exito-titulo">Guía registrada correctamente</p>
+      <p class="codigo codigo-grande">{{ nuevo.codigoRastreo }}</p>
+      <dl class="detalle">
+        <dt>Destinatario</dt><dd>{{ nuevo.destinatario }}</dd>
+        <dt>Dirección</dt><dd>{{ nuevo.direccionDestino }}</dd>
+        <dt>Flete</dt><dd>{{ nuevo.montoFlete | currency: 'CRC' : 'symbol-narrow' }}</dd>
+        <dt>Estado</dt><dd><span class="badge badge-pendiente">Pendiente</span></dd>
+      </dl>
+      <div class="acciones">
+        <a class="btn btn-primario" routerLink="/envios">Ver en el panel</a>
+        <a class="btn btn-secundario" routerLink="/rastreo" [queryParams]="{ codigo: nuevo.codigoRastreo }">Rastrear guía</a>
+        <button type="button" class="btn btn-secundario" (click)="registrarOtro()">Registrar otro</button>
+      </div>
+    </div>
+  } @else {
+    <form class="card formulario" #form="ngForm" (ngSubmit)="registrar(form)" novalidate>
+      @if (error()) {
+        <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+      }
+
+      <div class="campo">
+        <label for="destinatario">Destinatario *</label>
+        <input id="destinatario" name="destinatario" class="control" type="text" autocomplete="name"
+          placeholder="Nombre completo de quien recibe"
+          [(ngModel)]="envio.destinatario" #destinatario="ngModel" required minlength="3" maxlength="120"
+          [class.invalido]="destinatario.invalid && (destinatario.touched || form.submitted)"
+          [attr.aria-invalid]="destinatario.invalid && (destinatario.touched || form.submitted)"
+          aria-describedby="error-destinatario" />
+        @if (destinatario.invalid && (destinatario.touched || form.submitted)) {
+          <p id="error-destinatario" class="error-campo">
+            {{ destinatario.errors?.['required'] ? 'El destinatario es obligatorio.' : 'Ingrese al menos 3 caracteres.' }}
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="direccionDestino">Dirección de destino *</label>
+        <textarea id="direccionDestino" name="direccionDestino" class="control" rows="3"
+          placeholder="Provincia, cantón, distrito y señas"
+          [(ngModel)]="envio.direccionDestino" #direccion="ngModel" required minlength="5" maxlength="200"
+          [class.invalido]="direccion.invalid && (direccion.touched || form.submitted)"
+          [attr.aria-invalid]="direccion.invalid && (direccion.touched || form.submitted)"
+          aria-describedby="error-direccion"></textarea>
+        @if (direccion.invalid && (direccion.touched || form.submitted)) {
+          <p id="error-direccion" class="error-campo">
+            {{ direccion.errors?.['required'] ? 'La dirección es obligatoria.' : 'Ingrese al menos 5 caracteres.' }}
+          </p>
+        }
+      </div>
+
+      <div class="campo">
+        <label for="montoFlete">Monto de flete (₡) *</label>
+        <input id="montoFlete" name="montoFlete" class="control" type="number" inputmode="decimal"
+          min="1" step="0.01" placeholder="Ej: 7500"
+          [(ngModel)]="envio.montoFlete" #flete="ngModel" required
+          [class.invalido]="flete.invalid && (flete.touched || form.submitted)"
+          [attr.aria-invalid]="flete.invalid && (flete.touched || form.submitted)"
+          aria-describedby="error-flete" />
+        @if (flete.invalid && (flete.touched || form.submitted)) {
+          <p id="error-flete" class="error-campo">
+            {{ flete.errors?.['required'] ? 'El monto de flete es obligatorio.' : 'El monto debe ser mayor a cero.' }}
+          </p>
+        }
+      </div>
+
+      <div class="acciones">
+        <button type="submit" class="btn btn-primario" [disabled]="enviando()">
+          {{ enviando() ? 'Registrando…' : 'Registrar envío' }}
+        </button>
+        <a class="btn btn-secundario" routerLink="/envios">Cancelar</a>
+      </div>
+    </form>
+  }
+</section>

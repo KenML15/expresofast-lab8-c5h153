@@ -1,0 +1,24 @@
+@if (auth.usuario()) {
+  <header class="topbar">
+    <nav class="navbar" aria-label="Navegación principal">
+      <a class="logo" routerLink="/envios" aria-label="ExpresoFast, ir al panel de envíos">Expreso<span>Fast</span></a>
+
+      <ul class="nav-links">
+        @for (enlace of enlaces; track enlace.ruta) {
+          <li>
+            <a [routerLink]="enlace.ruta" routerLinkActive="activo" ariaCurrentWhenActive="page">{{ enlace.texto }}</a>
+          </li>
+        }
+      </ul>
+
+      <div class="user-info">
+        <span class="welcome-text">{{ auth.usuario() }}</span>
+        <button type="button" class="btn-logout" (click)="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    </nav>
+  </header>
+}
+
+<main [class.content]="auth.usuario()">
+  <router-outlet />
+</main>

@@ -1,8 +1,10 @@
 package cr.ac.ucr.paraiso.ie.c5h153.expresofast.business;
 
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -25,6 +27,7 @@ import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Usuario;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Vehiculo;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.BitacoraResponseDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CambioEstadoDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CrearEnvioDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
@@ -37,6 +40,8 @@ public class EnvioService {
 
     private static final Set<String> ESTADOS_FINALES = Set.of("ENTREGADO", "CANCELADO");
     private static final Set<String> ESTADOS_NO_PERMITIDOS_DESDE_FINAL = Set.of("PENDIENTE", "EN_TRANSITO");
+    private static final Set<String> ESTADOS_VALIDOS = Set.of("PENDIENTE", "EN_TRANSITO", "ENTREGADO", "CANCELADO");
+    private static final int MAX_INTENTOS_CODIGO = 20;
 
     private final EnvioRepository envioRepository;
     private final VehiculoRepository vehiculoRepository;
@@ -152,6 +157,11 @@ public class EnvioService {
         String estadoAnterior = envio.getEstadoEnvio();
         String estadoNuevo = request.getNuevoEstado();
 
+        if (estadoNuevo == null || !ESTADOS_VALIDOS.contains(estadoNuevo)) {
+            throw new IllegalArgumentException("Estado inválido: " + estadoNuevo
+                    + ". Valores permitidos: " + ESTADOS_VALIDOS);
+        }
+
         validarTransicionDeEstado(envio.getCodigoRastreo(), estadoAnterior, estadoNuevo);
 
         envio.setEstadoEnvio(estadoNuevo);
@@ -235,6 +245,51 @@ public class EnvioService {
                 nombreConductor);
     }
 
+    @Transactional(readOnly = true)
+    public List<EnvioDTO> obtenerTodos(String estado) {
+        List<Envio> envios = (estado != null && !estado.isBlank())
+                ? envioRepository.findByEstadoEnvioOrderByIdDesc(estado)
+                : envioRepository.findAllConDetalles();
+        return envios.stream().map(this::convertirADto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public EnvioDTO buscarPorCodigoRastreo(String codigo) {
+        Envio envio = envioRepository.findByCodigoRastreoIgnoreCase(codigo.trim())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No existe un envío con el código de rastreo: " + codigo));
+        return convertirADto(envio);
+    }
+
+    public EnvioDTO crearEnvio(CrearEnvioDTO request) {
+        Envio envio = new Envio();
+        envio.setCodigoRastreo(generarCodigoRastreo());
+        envio.setDestinatario(request.destinatario().trim());
+        envio.setDireccionDestino(request.direccionDestino().trim());
+        envio.setCosto(request.montoFlete());
+        envio.setEstadoEnvio("PENDIENTE");
+
+        return convertirADto(envioRepository.save(envio));
+    }
+
+    public EnvioDTO actualizarEstado(Integer id, CambioEstadoDTO request) {
+        actualizarEstadoEnvio(id, request);
+        return convertirADto(envioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado con ID: " + id)));
+    }
+
+    /** Genera un código único con formato EXP-AAAA-XXXX (ej: EXP-2026-1001). */
+    private String generarCodigoRastreo() {
+        String prefijo = "EXP-" + Year.now().getValue() + "-";
+        for (int i = 0; i < MAX_INTENTOS_CODIGO; i++) {
+            String codigo = prefijo + ThreadLocalRandom.current().nextInt(1000, 10000);
+            if (!envioRepository.existsByCodigoRastreo(codigo)) {
+                return codigo;
+            }
+        }
+        throw new IllegalStateException("No fue posible generar un código de rastreo único.");
+    }
+
     public EnvioResponseDTO cancelarEnvio(Integer id) {
         Envio envio = envioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado con ID: " + id));
@@ -287,9 +342,12 @@ public class EnvioService {
     }
 
     private EnvioDTO convertirADto(Envio e) {
-        String destinatario = (e.getConductor() != null)
-                ? e.getConductor().getNombre() + " " + e.getConductor().getApellidos()
-                : "Sin asignar";
+        String destinatario = e.getDestinatario();
+        if (destinatario == null || destinatario.isBlank()) {
+            destinatario = (e.getConductor() != null)
+                    ? e.getConductor().getNombre() + " " + e.getConductor().getApellidos()
+                    : "Sin asignar";
+        }
         return new EnvioDTO(
                 e.getId(),
                 e.getCodigoRastreo(),
