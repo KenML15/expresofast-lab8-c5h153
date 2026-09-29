@@ -49,8 +49,8 @@ async function iniciarSesion(event) {
     event.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
-    const errorEl = document.getElementById('loginError');
-    errorEl.textContent = '';
+    const errorEl = document.getElementById('loginError') || document.getElementById('errorMessage');
+    if (errorEl) errorEl.textContent = '';
 
     try {
         const response = await fetch(`${API_BASE}/auth/login`, {
@@ -59,19 +59,22 @@ async function iniciarSesion(event) {
             body: JSON.stringify({ username, password })
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
             throw new Error(data.error || 'Usuario o contraseña incorrectos.');
         }
 
-        localStorage.setItem('jwt_token', data.token);
-        localStorage.setItem('username', data.username);
-        localStorage.setItem('roles', JSON.stringify(data.roles));
+        const data = await response.json();
 
-        window.location.href = 'index.html';
+        // Guardar en sessionStorage para que app_paginado.js lo encuentre
+        sessionStorage.setItem('jwt_token', data.token);
+        sessionStorage.setItem('username', data.username);
+        sessionStorage.setItem('roles', JSON.stringify(data.roles));
+
+        // Redirigir directamente a la consola paginada
+        window.location.href = 'dashboard_paginado.html';
     } catch (error) {
-        errorEl.textContent = error.message;
+        if (errorEl) errorEl.textContent = error.message;
     }
 }
 
@@ -289,8 +292,9 @@ function cerrarModalBitacora() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
-    const errorMessage = document.getElementById('errorMessage');
-
+    
+    // Ajustado para buscar 'loginError' (como está en tu HTML) o 'errorMessage'
+    const errorMessage = document.getElementById('loginError') || document.getElementById('errorMessage');
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
@@ -299,8 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-
-            errorMessage.textContent = '';
+            if (errorMessage) errorMessage.textContent = '';
 
             try {
                 const response = await fetch('http://localhost:8080/api/auth/login', {
@@ -314,17 +317,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     const data = await response.json();
                     
+                    // 1. Guardamos el token en sessionStorage para que app_paginado.js lo encuentre
                     sessionStorage.setItem('jwt_token', data.token);
                     
-                    window.location.href = 'dashboard.html';
+                    // 2. REDIRECCIÓN CORREGIDA hacia tu nueva consola paginada
+                    window.location.href = 'dashboard_paginado.html';
+                    
                 } else if (response.status === 401 || response.status === 403) {
-                    errorMessage.textContent = 'Credenciales incorrectas. Intente nuevamente.';
+                    if (errorMessage) errorMessage.textContent = 'Credenciales incorrectas. Intente nuevamente.';
                 } else {
-                    errorMessage.textContent = 'Error procesando la solicitud. Código: ' + response.status;
+                    if (errorMessage) errorMessage.textContent = 'Error procesando la solicitud. Código: ' + response.status;
                 }
             } catch (error) {
                 console.error('Error de red:', error);
-                errorMessage.textContent = 'No se pudo conectar con el servidor. ¿Está encendido el backend?';
+                if (errorMessage) errorMessage.textContent = 'No se pudo conectar con el servidor. ¿Está encendido el backend?';
             }
         });
     }
