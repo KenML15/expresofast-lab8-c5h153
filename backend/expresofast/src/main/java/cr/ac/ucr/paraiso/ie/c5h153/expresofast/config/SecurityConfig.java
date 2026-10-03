@@ -49,14 +49,22 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                
-                // Cambiado a .authenticated() para evitar conflictos de mayúsculas/prefijos con los roles
-                .requestMatchers(HttpMethod.GET, "/api/v1/envios", "/api/v1/envios/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/envios").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/estado").authenticated()
+
+ 
+                .requestMatchers(HttpMethod.GET, "/api/v1/envios/check-tracking/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/envios/avanzado").authenticated()
+
                 .requestMatchers(HttpMethod.GET, "/api/v1/envios/*/bitacora").authenticated()
-                
+                .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/estado").authenticated()
+
+        
+                .requestMatchers(HttpMethod.POST, "/api/v1/envios").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/envios", "/api/v1/envios/**").authenticated()
+
+        
                 .requestMatchers("/api/vehiculos/**").hasRole("ADMIN")
+
+        
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
