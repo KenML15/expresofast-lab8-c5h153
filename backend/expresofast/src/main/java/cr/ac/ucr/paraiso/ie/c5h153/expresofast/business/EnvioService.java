@@ -15,6 +15,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Paquete;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioConPaquetesDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRegistroDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.PaqueteDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.exception.DuplicateResourceException;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.BitacoraEnvioRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.ConductorRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.EnvioRepository;
@@ -272,6 +279,45 @@ public class EnvioService {
         return convertirADto(envioRepository.save(envio));
     }
 
+
+    @Transactional(rollbackFor = Exception.class)
+    public EnvioConPaquetesDTO registrarEnvioConPaquetes(EnvioRegistroDTO request) {
+        String tracking = request.numeroTracking().trim().toUpperCase();
+
+       
+        if (envioRepository.existsByCodigoRastreoIgnoreCase(tracking)) {
+            throw new DuplicateResourceException("Este número de rastreo ya está en uso: " + tracking);
+        }
+
+        Envio envio = new Envio();
+        envio.setCodigoRastreo(tracking);
+        envio.setDestinatario(request.destinatario().trim());
+        envio.setDireccionDestino(request.direccionDestino().trim());
+        envio.setCosto(request.montoFlete());
+        envio.setFechaDespacho(request.fechaDespacho());
+        envio.setFechaEntregaEstimada(request.fechaEntregaEstimada());
+        envio.setEstadoEnvio("PENDIENTE");
+
+        BigDecimal pesoTotal = BigDecimal.ZERO;
+        for (PaqueteDTO dto : request.paquetes()) {
+            
+            envio.agregarPaquete(new Paquete(dto.descripcion().trim(), dto.pesoKg()));
+            pesoTotal = pesoTotal.add(dto.pesoKg());
+        }
+        envio.setPesoKg(pesoTotal); 
+        Envio guardado = envioRepository.saveAndFlush(envio);
+        return convertirAConPaquetesDto(guardado);
+    }
+
+    
+    @Transactional(readOnly = true)
+    public boolean existeTracking(String numeroTracking) {
+        if (numeroTracking == null || numeroTracking.isBlank()) {
+            return false;
+        }
+        return envioRepository.existsByCodigoRastreoIgnoreCase(numeroTracking.trim());
+    }
+
     public EnvioDTO actualizarEstado(Integer id, CambioEstadoDTO request) {
         actualizarEstadoEnvio(id, request);
         return convertirADto(envioRepository.findById(id)
@@ -339,6 +385,24 @@ public class EnvioService {
 
         // Convertimos Page<Envio> a Page<EnvioDTO>
         return paginaEnvios.map(this::convertirADto);
+    }
+
+    private EnvioConPaquetesDTO convertirAConPaquetesDto(Envio e) {
+        List<PaqueteDTO> paquetes = e.getPaquetes().stream()
+                .map(p -> new PaqueteDTO(p.getDescripcion(), p.getPesoKg()))
+                .toList();
+
+        return new EnvioConPaquetesDTO(
+                e.getId(),
+                e.getCodigoRastreo(),
+                e.getDestinatario(),
+                e.getDireccionDestino(),
+                e.getCosto(),
+                e.getEstadoEnvio(),
+                e.getFechaDespacho(),
+                e.getFechaEntregaEstimada(),
+                e.getPesoKg(),
+                paquetes);
     }
 
     private EnvioDTO convertirADto(Envio e) {

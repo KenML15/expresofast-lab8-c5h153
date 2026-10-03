@@ -57,4 +57,6 @@ public interface EnvioRepository extends JpaRepository<Envio, Integer> {
     List<Envio> findAllConDetalles();
 
     boolean existsByCodigoRastreo(String codigoRastreo);
+boolean existsByCodigoRastreoIgnoreCase(String codigoRastreo);
+
 }

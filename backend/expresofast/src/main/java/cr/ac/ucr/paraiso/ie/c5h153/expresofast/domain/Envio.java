@@ -3,6 +3,9 @@ package cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Envio")
@@ -39,6 +42,25 @@ public class Envio extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conductor_id")
     private Conductor conductor;
+
+    @Column(name = "fecha_despacho")
+    private LocalDate fechaDespacho;
+
+    @Column(name = "fecha_entrega_estimada")
+    private LocalDate fechaEntregaEstimada;
+
+    @OneToMany(mappedBy = "envio", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Paquete> paquetes = new ArrayList<>();
+
+   public void agregarPaquete(Paquete paquete) {
+        paquetes.add(paquete);
+        paquete.setEnvio(this);
+    }
+
+    public void removerPaquete(Paquete paquete) {
+        paquetes.remove(paquete);
+        paquete.setEnvio(null);
+    }
 
     // Getters y Setters
     public Integer getId() {
@@ -112,4 +134,13 @@ public class Envio extends AuditableEntity {
     public void setConductor(Conductor conductor) {
         this.conductor = conductor;
     }
+
+       public LocalDate getFechaDespacho() { return fechaDespacho; }
+    public void setFechaDespacho(LocalDate fechaDespacho) { this.fechaDespacho = fechaDespacho; }
+
+    public LocalDate getFechaEntregaEstimada() { return fechaEntregaEstimada; }
+    public void setFechaEntregaEstimada(LocalDate fechaEntregaEstimada) { this.fechaEntregaEstimada = fechaEntregaEstimada; }
+
+    public List<Paquete> getPaquetes() { return paquetes; }
+    public void setPaquetes(List<Paquete> paquetes) { this.paquetes = paquetes; } 
 }

@@ -68,4 +68,15 @@ public class GlobalExceptionHandler {
         body.put("error", mensaje);
         return ResponseEntity.status(status).body(body);
     }
+
+        @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateResourceException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT,
+                "El registro viola una restricción de la base de datos (posible tracking duplicado)");
+    }
 }
