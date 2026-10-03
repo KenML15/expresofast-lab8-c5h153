@@ -1,0 +1,213 @@
+<section class="contenedor" aria-labelledby="titulo-avanzado">
+  <div class="page-header">
+    <div>
+      <h1 id="titulo-avanzado">Registrar envío con paquetes</h1>
+      <p>Un mismo número de rastreo puede agrupar varios paquetes de distinto peso y descripción.</p>
+    </div>
+  </div>
+
+  @if (creado(); as nuevo) {
+    <div class="card exito" role="status">
+      <p class="exito-titulo">Envío registrado correctamente</p>
+      <p class="codigo codigo-grande">{{ nuevo.codigoRastreo }}</p>
+
+      <dl class="detalle">
+        <dt>Destinatario</dt><dd>{{ nuevo.destinatario }}</dd>
+        <dt>Dirección</dt><dd>{{ nuevo.direccionDestino }}</dd>
+        <dt>Flete</dt><dd>{{ nuevo.montoFlete | currency: 'CRC' : 'symbol-narrow' }}</dd>
+        <dt>Despacho</dt><dd>{{ nuevo.fechaDespacho | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+        <dt>Entrega estimada</dt><dd>{{ nuevo.fechaEntregaEstimada | date: 'dd/MM/yyyy' : 'UTC' }}</dd>
+        <dt>Peso total</dt><dd>{{ nuevo.pesoTotalKg | number: '1.2-2' }} kg</dd>
+      </dl>
+
+      <table class="tabla-paquetes">
+        <caption>{{ nuevo.paquetes.length }} paquete(s) registrados</caption>
+        <thead>
+          <tr><th scope="col">#</th><th scope="col">Descripción</th><th scope="col">Peso (kg)</th></tr>
+        </thead>
+        <tbody>
+          @for (p of nuevo.paquetes; track $index) {
+            <tr>
+              <td>{{ $index + 1 }}</td>
+              <td>{{ p.descripcion }}</td>
+              <td>{{ p.pesoKg | number: '1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="acciones">
+        <a class="btn btn-primario" routerLink="/envios">Ver en el panel</a>
+        <button type="button" class="btn btn-secundario" (click)="registrarOtro()">Registrar otro</button>
+      </div>
+    </div>
+  } @else {
+
+    <form class="card formulario" [formGroup]="form" (ngSubmit)="registrar()" novalidate>
+      @if (error()) {
+        <div class="alerta alerta-error" role="alert">{{ error() }}</div>
+      }
+
+      @let tracking = form.controls.numeroTracking;
+      <div class="campo">
+        <label for="numeroTracking">Número de rastreo *</label>
+        <input id="numeroTracking" class="control" type="text" formControlName="numeroTracking"
+          placeholder="Ej: EXP-2026-0101" autocomplete="off" maxlength="30"
+          [class.invalido]="mostrarError(tracking)"
+          [attr.aria-invalid]="mostrarError(tracking)"
+          aria-describedby="estado-tracking" />
+
+        <div id="estado-tracking" aria-live="polite">
+          @if (tracking.pending) {
+            <p class="estado-tracking verificando">Verificando disponibilidad…</p>
+          } @else if (mostrarError(tracking)) {
+            <p class="error-campo">
+              @if (tracking.hasError('required')) {
+                El número de rastreo es obligatorio.
+              } @else if (tracking.hasError('pattern')) {
+                Solo se permiten letras, números y guiones.
+              } @else if (tracking.hasError('trackingTomado')) {
+                Este número de rastreo ya está en uso
+              } @else if (tracking.hasError('trackingNoVerificado')) {
+                No se pudo verificar el número de rastreo. Revise la conexión con el servidor.
+              }
+            </p>
+          } @else if (tracking.valid && tracking.dirty) {
+            <p class="estado-tracking disponible">✓ Número de rastreo disponible</p>
+          }
+        </div>
+      </div>
+
+      @let destinatario = form.controls.destinatario;
+      <div class="campo">
+        <label for="destinatario">Destinatario *</label>
+        <input id="destinatario" class="control" type="text" formControlName="destinatario"
+          placeholder="Nombre completo de quien recibe" autocomplete="name"
+          [class.invalido]="mostrarError(destinatario)" [attr.aria-invalid]="mostrarError(destinatario)" />
+        @if (mostrarError(destinatario)) {
+          <p class="error-campo">
+            {{ destinatario.hasError('required') ? 'El destinatario es obligatorio.' : 'Ingrese entre 3 y 120 caracteres.' }}
+          </p>
+        }
+      </div>
+
+
+      @let direccion = form.controls.direccionDestino;
+      <div class="campo">
+        <label for="direccionDestino">Dirección de destino *</label>
+        <textarea id="direccionDestino" class="control" rows="2" formControlName="direccionDestino"
+          placeholder="Provincia, cantón, distrito y señas"
+          [class.invalido]="mostrarError(direccion)" [attr.aria-invalid]="mostrarError(direccion)"></textarea>
+        @if (mostrarError(direccion)) {
+          <p class="error-campo">
+            {{ direccion.hasError('required') ? 'La dirección es obligatoria.' : 'Ingrese entre 5 y 200 caracteres.' }}
+          </p>
+        }
+      </div>
+
+      @let flete = form.controls.montoFlete;
+      <div class="campo">
+        <label for="montoFlete">Monto de flete (₡) *</label>
+        <input id="montoFlete" class="control" type="number" inputmode="decimal" min="1" step="0.01"
+          formControlName="montoFlete" placeholder="Ej: 7500"
+          [class.invalido]="mostrarError(flete)" [attr.aria-invalid]="mostrarError(flete)" />
+        @if (mostrarError(flete)) {
+          <p class="error-campo">
+            {{ flete.hasError('required') ? 'El monto de flete es obligatorio.' : 'El monto debe ser mayor a cero.' }}
+          </p>
+        }
+      </div>
+
+      @let despacho = form.controls.fechaDespacho;
+      @let entrega = form.controls.fechaEntregaEstimada;
+      <fieldset class="grupo-fechas">
+        <legend>Fechas operativas</legend>
+        <div class="fechas">
+          <div class="campo">
+            <label for="fechaDespacho">Fecha de despacho *</label>
+            <input id="fechaDespacho" class="control" type="date" formControlName="fechaDespacho"
+              [class.invalido]="mostrarError(despacho) || errorFechas" />
+            @if (mostrarError(despacho)) {
+              <p class="error-campo">La fecha de despacho es obligatoria.</p>
+            }
+          </div>
+
+          <div class="campo">
+            <label for="fechaEntregaEstimada">Entrega estimada *</label>
+            <input id="fechaEntregaEstimada" class="control" type="date" formControlName="fechaEntregaEstimada"
+              [min]="despacho.value"
+              [class.invalido]="mostrarError(entrega) || errorFechas" />
+            @if (mostrarError(entrega)) {
+              <p class="error-campo">La fecha de entrega estimada es obligatoria.</p>
+            }
+          </div>
+        </div>
+
+        @if (errorFechas) {
+          <div class="alerta alerta-error alerta-global" role="alert">
+            La fecha de entrega estimada debe ser posterior a la fecha de despacho.
+          </div>
+        }
+      </fieldset>
+
+      <fieldset class="grupo-paquetes" formArrayName="paquetes">
+        <legend>Paquetes del envío ({{ paquetes.length }})</legend>
+
+        @for (paquete of paquetes.controls; track paquete; let i = $index) {
+          @let descripcion = paquete.controls.descripcion;
+          @let peso = paquete.controls.pesoKg;
+
+          <div class="paquete" [formGroupName]="i">
+            <span class="paquete-numero" aria-hidden="true">{{ i + 1 }}</span>
+
+            <div class="campo">
+              <label [for]="'descripcion-' + i">Descripción *</label>
+              <input [id]="'descripcion-' + i" class="control" type="text" formControlName="descripcion"
+                placeholder="Ej: Caja de libros"
+                [class.invalido]="mostrarError(descripcion)" [attr.aria-invalid]="mostrarError(descripcion)" />
+              @if (mostrarError(descripcion)) {
+                <p class="error-campo">La descripción es obligatoria.</p>
+              }
+            </div>
+
+            <div class="campo campo-peso">
+              <label [for]="'peso-' + i">Peso (kg) *</label>
+              <input [id]="'peso-' + i" class="control" type="number" inputmode="decimal"
+                min="0.01" max="999.99" step="0.01" formControlName="pesoKg" placeholder="0.00"
+                [class.invalido]="mostrarError(peso)" [attr.aria-invalid]="mostrarError(peso)" />
+              @if (mostrarError(peso)) {
+                <p class="error-campo">
+                  {{ peso.hasError('required') ? 'Obligatorio.' : 'Entre 0.01 y 999.99 kg.' }}
+                </p>
+              }
+            </div>
+
+            <button type="button" class="btn-eliminar"
+              (click)="eliminarPaquete(i)"
+              [disabled]="paquetes.length === 1"
+              [attr.aria-label]="'Eliminar paquete ' + (i + 1)"
+              [title]="paquetes.length === 1 ? 'El envío debe tener al menos 1 paquete' : 'Eliminar paquete'">
+              X
+            </button>
+          </div>
+        }
+
+        <div class="paquetes-pie">
+          <button type="button" class="btn btn-secundario" (click)="agregarPaquete()">+ Añadir Paquete</button>
+          <span class="peso-total">Peso total: <strong>{{ pesoTotal() | number: '1.2-2' }} kg</strong></span>
+        </div>
+      </fieldset>
+
+      <div class="acciones">
+        <button type="submit" class="btn btn-primario" [disabled]="form.invalid || form.pending || enviando()">
+          {{ enviando() ? 'Registrando…' : 'Registrar envío' }}
+        </button>
+        <a class="btn btn-secundario" routerLink="/envios">Cancelar</a>
+      </div>
+
+      @if (form.invalid && !form.pending) {
+        <p class="ayuda">Complete todos los campos obligatorios (*) para habilitar el registro.</p>
+      }
+    </form>
+  }
+</section>

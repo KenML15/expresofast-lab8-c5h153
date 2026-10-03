@@ -2,6 +2,9 @@ package cr.ac.ucr.paraiso.ie.c5h153.expresofast.controller;
 
 import java.util.List;
 
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioConPaquetesDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRegistroDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.TrackingCheckDTO;
 import org.springframework.security.core.Authentication;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -88,7 +91,19 @@ public class EnvioController {
         return ResponseEntity.ok(envioService.obtenerBitacoraDeEnvio(id));
     }
 
-    // Sin parámetro "page" retorna la lista completa (Angular); con "page" retorna la página (Lab 9)
+    @GetMapping("/check-tracking/{trackingNumber}")
+    public ResponseEntity<TrackingCheckDTO> verificarTracking(@PathVariable String trackingNumber) {
+        boolean existe = envioService.existeTracking(trackingNumber);
+        return ResponseEntity.ok(new TrackingCheckDTO(trackingNumber, existe));
+    }
+
+    @PostMapping("/avanzado")
+    public ResponseEntity<EnvioConPaquetesDTO> registrarEnvioAvanzado(
+            @Valid @RequestBody EnvioRegistroDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(envioService.registrarEnvioConPaquetes(request));
+    }
+
     @GetMapping
     public ResponseEntity<?> obtenerEnvios(
             @RequestParam(required = false) Integer page,
