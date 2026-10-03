@@ -4,6 +4,7 @@ import { EnvioListComponent } from './components/envio-list/envio-list.component
 import { EnvioFormComponent } from './components/envio-form/envio-form.component';
 import { EnvioTrackingComponent } from './components/envio-tracking/envio-tracking.component';
 import { authGuard } from './guards/auth.guard';
+import { EnvioAvanzadoFormComponent } from './components/envio-avanzado-form/envio-avanzado-form.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'envios', pathMatch: 'full' },
@@ -11,5 +12,6 @@ export const routes: Routes = [
   { path: 'envios', component: EnvioListComponent, canActivate: [authGuard], title: 'Envíos · ExpresoFast' },
   { path: 'nuevo-envio', component: EnvioFormComponent, canActivate: [authGuard], title: 'Nuevo envío · ExpresoFast' },
   { path: 'rastreo', component: EnvioTrackingComponent, canActivate: [authGuard], title: 'Rastrear guía · ExpresoFast' },
+    { path: 'envio-avanzado', component: EnvioAvanzadoFormComponent, canActivate: [authGuard], title: 'Envío con paquetes · ExpresoFast' },
   { path: '**', redirectTo: 'envios' },
 ];

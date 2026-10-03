@@ -15,6 +15,7 @@ export class App {
   protected readonly enlaces = [
     { ruta: '/envios', texto: 'Envíos' },
     { ruta: '/nuevo-envio', texto: 'Nuevo envío' },
+    { ruta: '/envio-avanzado', texto: 'Envío con paquetes' },
     { ruta: '/rastreo', texto: 'Rastrear guía' },
   ];
 
